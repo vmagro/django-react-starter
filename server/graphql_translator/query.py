@@ -28,6 +28,7 @@ class Query(object):
         selections = query.selections
         response = {}
         for field in selections:
+            print(field)
             url = 'http://localhost:8000/api/' + field.name
             if field.arguments:
                 # assume that an argument 'id' is included in the url
@@ -44,12 +45,17 @@ class Query(object):
 
             if 'results' in body:
                 # return a list
-                data = [self.execute_on_dict(field, item) for item in body['results']]
+                data = [NestedQuery(field, item).execute() for item in body['results']]
             else:
                 # returning just one object
-                data = self.execute_on_dict(field, body)
-            response[field.name] = data
+                data = NestedQuery(field, body).execute()
 
+            if field.alias:
+                response[field.alias] = data
+            else:
+                response[field.name] = data
+
+        print(response)
         return {'data': response}
 
     def strip_dict(self, ast, d):
@@ -62,21 +68,36 @@ class Query(object):
                 new[field.name] = d[field.name]
         return new
 
-    def execute_on_dict(self, ast, d):
+
+class NestedQuery(Query):
+    """NestedQuery is a logical subset of a Query, it is a query that is made in the process of
+    resolving the root query.
+
+    A root query is a special case of a Query in that it knows the URL to call a priori, whereas
+    with NestedQueries we follow links in the response from an API.
+    """
+
+    def __init__(self, ast, body):
+        self.ast = ast
+        self.body = body
+
+    def execute(self):
         """Run a query AST on a dictionary that came from the API server."""
-        for field in ast.selections:
+        for field in self.ast.selections:
             # if there are nested selections, we might need to make another query
             if field.selections:
                 # first check if we have the data requested already
                 # we don't need to do anything for this field if we already have the data
-                if field.name not in d:
+                if field.name not in self.body:
                     print(f'{field} not in dict at all, can\'t proceed')
                     raise KeyError(f'{field} not in API response')
-                if type(d[field.name]) is not dict:
+                if type(self.body[field.name]) is not dict:
                     print(f'{field} is a URL, retrieving its data')
                     # if the field isn't in the dictionary, we have to make a new query
                     # the field must be a url if it's not the actual data we want
-                    body = urlopen(d[field.name]).read()
+                    body = urlopen(self.body[field.name]).read()
                     result = json.loads(body)
-                    d[field.name] = self.execute_on_dict(field, result)
-        return self.strip_dict(ast, d)
+                    nested = NestedQuery(field, result)
+                    self.body[field.name] = nested.execute()
+
+        return self.strip_dict(self.ast, self.body)

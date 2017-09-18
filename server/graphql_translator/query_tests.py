@@ -7,6 +7,9 @@ def test_execute():
         profiles(id: 1) {
             username
         }
+        vinnie: profiles(id: 1) {
+            username
+        }
         posts {
             title
             vote_count
