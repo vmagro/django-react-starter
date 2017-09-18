@@ -70,8 +70,7 @@ class Query(object):
 
 
 class NestedQuery(Query):
-    """NestedQuery is a logical subset of a Query, it is a query that is made in the process of
-    resolving the root query.
+    """NestedQuery is a query that is made in the process of resolving the root query.
 
     A root query is a special case of a Query in that it knows the URL to call a priori, whereas
     with NestedQueries we follow links in the response from an API.
