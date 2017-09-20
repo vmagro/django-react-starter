@@ -14,6 +14,7 @@ class Query(object):
         if type(query) == str:
             # TODO(vmagro) this probably needs to change if we support mutations
             self.ast = parser.parse(query).definitions[0]
+            assert False
         elif type(query) == graphql.ast.Query:
             self.ast = query
         else:
@@ -29,6 +30,7 @@ class Query(object):
         response = {}
         for field in selections:
             print(field)
+            assert False
             url = 'http://localhost:8000/api/' + field.name
             if field.arguments:
                 # assume that an argument 'id' is included in the url
@@ -83,6 +85,7 @@ class NestedQuery(Query):
     def execute(self):
         """Run a query AST on a dictionary that came from the API server."""
         for field in self.ast.selections:
+            print(field)
             # if there are nested selections, we might need to make another query
             if field.selections:
                 # first check if we have the data requested already

@@ -5,7 +5,7 @@ def test_execute():
     query = Query('''
     {
         profiles(id: 1) {
-            username
+            ...profileFields
         }
         vinnie: profiles(id: 1) {
             username
@@ -16,6 +16,10 @@ def test_execute():
             owner {
                 username
             }
+        }
+
+        fragment profileFields on Profile {
+          username
         }
     }''')
     result = query.execute()['data']
